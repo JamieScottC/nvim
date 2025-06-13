@@ -1,2 +1,7 @@
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Down Center' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Up Center' })
+vim.keymap.set('n', '<LEADER>ee', ':e .<CR>', { desc = 'Oil Project Directory' })
+vim.keymap.set('n', '<LEADER>ec', ':e %:h<CR>', { desc = 'Oil File Directory' })
+vim.keymap.set('n', '<LEADER>ce', ':Copilot enable<CR>', { desc = 'Enable copilot' })
+vim.keymap.set('n', '<LEADER>cd', ':Copilot disable<CR>', { desc = 'Disable copilot' })
+vim.keymap.set('n', '<C-a>', 'ggVG', { desc = 'Select All' })
