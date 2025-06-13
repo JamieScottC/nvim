@@ -200,7 +200,6 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -359,9 +358,8 @@ require('lazy').setup({
         --
         defaults = {
           mappings = {
-            --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
             n = {
-              ['dd'] = 'delete_buffer', -- Delete the current buffer
+              ['dd'] = require('telescope.actions').delete_buffer, -- Delete the current buffer
             },
           },
         },
@@ -391,6 +389,27 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
       vim.keymap.set('n', '<leader>/', builtin.current_buffer_fuzzy_find, { desc = '[/] Fuzzily search in current buffer' })
       vim.keymap.set('n', '<leader>gt', builtin.git_status, { desc = 'Find Git status' })
+      vim.keymap.set('n', '<leader>sz', function()
+        require('telescope.pickers').new({}, {
+          prompt_title = 'Search for directories',
+          finder = require('telescope.finders').new_table({
+            results = require('telescope.utils').get_os_command_output({ 'fd', '--type', 'd', '--hidden', '--follow', '--exclude', '.git' }),
+          }),
+          previewer = require("telescope.previewers").vim_buffer_cat.new({}),
+          sorter = require('telescope.sorters').get_generic_fuzzy_sorter(),
+          attach_mappings = function(prompt_bufnr)
+            -- This is a custom mapping opens up the builtin live grep picker in the directory
+            --  that you selected in the picker.
+            local actions = require 'telescope.actions'
+            actions.select_default:replace(function()
+              local selection = require('telescope.actions.state').get_selected_entry()
+              actions.close(prompt_bufnr)
+              builtin.live_grep { cwd = selection.value }
+            end)
+            return true
+          end,
+        }):find()
+      end, { desc = '[S]earch [Z] for directories' })
 
       -- It's also possible to pass additional configuration options.
       --  See `:help telescope.builtin.live_grep()` for information about particular keys
@@ -617,16 +636,8 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        gopls = {},
-        lua_ls = {
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-            },
-          },
-        },
+        pyright = {},
+        -- clangd = {},
         ts_ls = {
           init_options = {
             plugins = {
@@ -637,7 +648,21 @@ require('lazy').setup({
               },
             },
           },
-          filetypes = { 'javascript', 'typescript', 'vue' },
+          filetypes = {
+            'javascript',
+            'typescript',
+            'vue',
+          },
+        },
+        gopls = {},
+        lua_ls = {
+          settings = {
+            Lua = {
+              completion = {
+                callSnippet = 'Replace',
+              },
+            },
+          },
         },
       }
       -- Ensure the servers and tools above are installed
@@ -663,12 +688,6 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
       for server_name, config in pairs(servers) do
-        config.capabilities = vim.tbl_deep_extend(
-          'force',
-          {},
-          capabilities,
-          config.capabilities or {}
-        )
         vim.lsp.config(server_name, config)
       end
     end,
